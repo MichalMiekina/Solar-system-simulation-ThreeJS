@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThreeJSProject</title>
+    <style>
+        #s1 {
+            display: flex;
+            margin-left: 20%;
+            margin-top: 100px;
+            color: white;
+            justify-content: space-between;
+            width: 60%;
+        }
+
+        canvas {
+            position: absolute;
+            margin: 0 !important;
+            float: left;
+            z-index: -1;
+        }
+
+        body {
+            display: flex;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.115/build/three.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.115/examples/js/controls/OrbitControls.js"></script>
+    <div id="s1">
+        <div>
+            <p>time speed slider: <a>1</a>x</p>
+            <input type="range" min="0" max="10" value="1" step="0.1" onchange="speedChange()">
+            <br>
+            <button onclick="default_speed()">
+                Set default
+            </button>
+        </div>
+
+        <div>
+            <button onclick="defaultPositions()">
+                Set default positions
+            </button>
+        </div>
+
+        <div>
+            <p>day-year proportion: <a>1</a>x</p>
+            <input type="range" min="0" max="365" value="1" step="0.1" onchange="dayToYearProps()">
+            <br>
+            <button onclick="default_proportions()">
+                Set default
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+
+
+        const scene = new THREE.Scene();
+        const camera_sun = new THREE.PerspectiveCamera(10, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera_earth = new THREE.PerspectiveCamera(10, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        var camera = camera_sun;
+        camera.position.set(0, 0, 100);
+        const light = new THREE.PointLight(0xffffff, 1)
+        const light2 = new THREE.PointLight(0xffffff, .3)
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        })
+
+        var loader = new THREE.TextureLoader();
+
+        const background_stars = loader.load('stars.png');
+        const sun_texture = loader.load('8k_sun.jpg');
+        const earth_texture = loader.load('earth_8k.jpg');
+        const mercury_texture = loader.load('8k_mercury.jpg');
+        const moon_texture = loader.load('8k_moon.jpg');
+        const venus_texture = loader.load('4k_venus.jpg');
+        const mars_texture = loader.load('8k_mars.jpg');
+        const phobos_texture = loader.load('phobos.jpg');
+        const deimos_texture = loader.load('deimos.png');
+
+        const sun_geometry = new THREE.SphereGeometry(4, 32, 32);
+        const earth_geometry = new THREE.SphereGeometry(3.6676 / 4, 16, 16);
+        const mercury_geometry = new THREE.SphereGeometry(1.404467 / 4, 16, 16);
+        const moon_geometry = new THREE.SphereGeometry(1 / 4, 16, 16);
+        const venus_geometry = new THREE.SphereGeometry(3.4 / 4, 16, 16);
+        const mars_geometry = new THREE.SphereGeometry(3 / 4, 16, 16);
+        const phobos_geometry = new THREE.SphereGeometry(1 / 6, 16, 16);
+        const deimos_geometry = new THREE.SphereGeometry(1 / 8, 16, 16);
+
+        scene.background = background_stars;
+        const sun_material = new THREE.MeshBasicMaterial({ map: sun_texture });
+        const earth_material = new THREE.MeshBasicMaterial({ map: earth_texture });
+        const mercury_material = new THREE.MeshBasicMaterial({ map: mercury_texture });
+        const moon_material = new THREE.MeshBasicMaterial({ map: moon_texture });
+        const venus_material = new THREE.MeshBasicMaterial({ map: venus_texture });
+        const mars_material = new THREE.MeshBasicMaterial({ map: mars_texture });
+        const phobos_material = new THREE.MeshBasicMaterial({ map: phobos_texture })
+        const deimos_material = new THREE.MeshBasicMaterial({ map: deimos_texture })
+
+        const sun = new THREE.Mesh(sun_geometry, sun_material);
+        const earth = new THREE.Mesh(earth_geometry, earth_material);
+        const mercury = new THREE.Mesh(mercury_geometry, mercury_material);
+        const moon = new THREE.Mesh(moon_geometry, moon_material);
+        const venus = new THREE.Mesh(venus_geometry, venus_material);
+        const mars = new THREE.Mesh(mars_geometry, mars_material);
+        const phobos = new THREE.Mesh(phobos_geometry, phobos_material);
+        const deimos = new THREE.Mesh(deimos_geometry, deimos_material);
+
+        sun.position.set(0, 0, 0)
+        earth.position.set(8, 0, 0);
+        mercury.position.set(6, 0, 0);
+
+
+        scene.add(sun, earth, mercury, moon, venus, mars, phobos, deimos);
+
+        light.position.set(0, 0, 0)
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        x = 0;
+        earth_day = 0.01 * document.getElementById("s1").getElementsByTagName("input")[0].value
+        earth_year = earth_day / 365 * document.getElementById("s1").getElementsByTagName("input")[1].value
+        earth.rotation.z += 0.4 // 
+        sun.rotation.y = (90 / 57.3) * 4
+        const animate = function () {
+            requestAnimationFrame(animate);
+            x += earth_year;
+
+            sun.rotation.y += earth_day / 27;
+            mercury.rotation.y += earth_day / 59;
+            venus.rotation.y -= earth_day / 243;
+            earth.rotation.y += earth_day;
+            moon.rotation.y += earth_day / 27;
+            mars.rotation.y += earth_day / 1.03;
+
+            mercury.position.z = 5 * Math.cos(x * 4.14772727273) + 0;
+            mercury.position.x = 5 * Math.sin(x * 4.14772727273) + 0;
+
+            venus.position.z = 12 * Math.cos(x * 1.62222222222) + 0;
+            venus.position.x = 12 * Math.sin(x * 1.62222222222) + 0;
+
+            earth.position.z = 20 * Math.cos(x) + 0;
+            earth.position.x = 20 * Math.sin(x) + 0;
+            // camera.rotation.y+= earth_day/500;
+
+            moon.position.z = 20 * Math.cos(x) + 2 * Math.cos(13.5185185185 * x);
+            moon.position.x = 20 * Math.sin(x) + 2 * Math.sin(13.5185185185 * x);
+
+            mars.position.z = 30 * Math.cos(x * 0.53129548762) + 0;
+            mars.position.x = 30 * Math.sin(x * 0.53129548762) + 0;
+
+            phobos.position.z = 30 * Math.cos(x * 0.53129548762) + 2 * Math.cos(365*3.13 * x);
+            phobos.position.x = 30 * Math.sin(x * 0.53129548762) + 2 * Math.sin(365*3.13 * x);
+
+            deimos.position.z = 30 * Math.cos(x * 0.53129548762) + 3 * Math.cos(365*0.7921 * x);
+            deimos.position.x = 30 * Math.sin(x * 0.53129548762) + 3 * Math.sin(365*0.7921 * x);
+
+            renderer.render(scene, camera);
+        };
+
+
+        animate();
+        function speedChange() {
+            earth_day = 0.01 * document.getElementById("s1").getElementsByTagName("input")[0].value;
+            earth_year = earth_day / 365 * document.getElementById("s1").getElementsByTagName("input")[1].value;
+            document.getElementById("s1").getElementsByTagName("p")[0].getElementsByTagName("a")[0].innerText = document.getElementById("s1").getElementsByTagName("input")[0].value;
+        }
+
+        function dayToYearProps() {
+            earth_day = 0.01 * document.getElementById("s1").getElementsByTagName("input")[0].value;
+            earth_year = earth_day / 365 * document.getElementById("s1").getElementsByTagName("input")[1].value;
+            document.getElementById("s1").getElementsByTagName("p")[1].getElementsByTagName("a")[0].innerText = document.getElementById("s1").getElementsByTagName("input")[1].value;
+        }
+
+        function default_speed() {
+            document.getElementById("s1").getElementsByTagName("input")[0].value = 1;
+            speedChange();
+        }
+
+        function default_proportions() {
+            document.getElementById("s1").getElementsByTagName("input")[1].value = 1;
+            dayToYearProps();
+        }
+
+        function defaultPositions() {
+            x = 0;
+        }
+    </script>
+
+</body>
+
+</html>
